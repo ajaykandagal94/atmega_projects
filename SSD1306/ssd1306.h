@@ -1,8 +1,6 @@
 #ifndef SSD1306_H
 #define SSD1306_H
 
-#include <avr/io.h>
-
 #define SSD1306_LASTLINE 0x07
 #define SSD1306_COMMAND 0x00
 #define SSD1306_DATA 0xC0
@@ -52,8 +50,8 @@ void SSD1306_writeStart(const int img_width, const int img_height);
 // call SSD1306_writeStart() before using this function
 void SSD1306_writeBytes(const unsigned char *data, const int size);
 
-void SSD1306_clearDisp(const int img_width, const int img_height);
+void SSD1306_clearFullDisp();
 
-void SSD1306_writeFullDisp(const unsigned char *data_arr, const int data_size);
+void SSD1306_writeFullDisp(const unsigned char *data, const int size);
 
 #endif // SSD1306_H

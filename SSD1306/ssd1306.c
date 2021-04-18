@@ -1,3 +1,7 @@
+#include <avr/io.h>
+#include <string.h>
+#include "ssd1306.h"
+
 void SSD1306_init()
 {
     SSD1306_sendCmd(SSD1306_DISPLAY_OFF);
@@ -106,7 +110,7 @@ void SSD1306_writeStart(const int img_width, const int img_height)
 
 void SSD1306_writeBytes(const unsigned char *data, const int size)
 {    
-    for (int i = 0; i < count;)
+    for (int i = 0; i < size;)
     {
         // i2c start
         TWCR = ((1 << TWINT) | (1 << TWSTA) | (1 << TWEN)); // send START
@@ -123,7 +127,7 @@ void SSD1306_writeBytes(const unsigned char *data, const int size)
         while (!(TWCR & (1 << TWINT))); // delay until TWINT set
 
         // 16 bytes per I2C transmission__64 transmissions per screen
-        for (int j = 0; j < 16 && i < count; j++)
+        for (int j = 0; j < 16 && i < size; j++)
         {
             TWDR = *(data + i);
             TWCR = ((1 << TWINT) | (1 << TWEN));
@@ -137,24 +141,50 @@ void SSD1306_writeBytes(const unsigned char *data, const int size)
     }
 }
 
-void SSD1306_clearDisp(const int img_width, const int img_height)
+void SSD1306_clearFullDisp()
 {
-    unsigned char disp_data[1024];
-    memset(disp_data, 0, sizeof(disp_data));
+    const int img_width = 128;
+    const int img_height = 64;
+    int size = (img_height * img_width) / 8;
 
-    SSD1306_sendCmd(SSD1306_DISPLAY_OFF);
-    SSD1306_writeStart(128, 64);
-    SSD1306_writeBytes(disp_data, sizeof(disp_data))
-    SSD1306_sendCmd(SSD1306_DISPLAY_ON);
+    SSD1306_writeStart(img_width, img_height);
+    
+    for (int i = 0; i < size;)
+    {
+        // i2c start
+        TWCR = ((1 << TWINT) | (1 << TWSTA) | (1 << TWEN)); // send START
+        while (!(TWCR & (1 << TWINT))); // delay until TWINT set
+
+        // send slave addr
+        TWDR = SSD1306_ADDRESS << 1;
+        TWCR = ((1 << TWINT) | (1 << TWEN));
+        while (!(TWCR & (1 << TWINT))); // delay until TWINT set
+
+        // send D/C_sentinal byte for data stream
+        TWDR = 0x40; 
+        TWCR = ((1 << TWINT) | (1 << TWEN));
+        while (!(TWCR & (1 << TWINT))); // delay until TWINT set
+
+        // 16 bytes per I2C transmission__64 transmissions per screen
+        for (int j = 0; j < 16 && i < size; j++)
+        {
+            TWDR = 0x00;
+            TWCR = ((1 << TWINT) | (1 << TWEN));
+            while (!(TWCR & (1 << TWINT))); // delay until TWINT set
+            i++; 
+        }
+
+        // i2c stop
+        TWCR = ((1 << TWINT) | (1 << TWEN) | (1 << TWSTO));
+        while (!(TWCR & (1 << TWINT))); // delay until TWINT set
+    }
 }
 
-void SSD1306_writeFullDisp(const unsigned char *data_arr, const int data_size)
+void SSD1306_writeFullDisp(const unsigned char *data, const int size)
 {
-    unsigned char disp_data[1024];
-    memset(disp_data, 0, sizeof(disp_data));
+    const int img_width = 128;
+    const int img_height = 64;
 
-    SSD1306_sendCmd(SSD1306_DISPLAY_OFF);
-    SSD1306_writeStart(128, 64);
-    SSD1306_writeBytes(data_arr, data_size)
-    SSD1306_sendCmd(SSD1306_DISPLAY_ON);
+    SSD1306_writeStart(img_width, img_height);
+    SSD1306_writeBytes(data, size);
 }
